@@ -35,9 +35,9 @@ class Macro:
     def __init__(self, name):
         self.name = name
         time = datetime.now()
-        self.file_name = time.strftime("%Y%m%D%H%M%S") + ".mir"
+        self.file_name = time.strftime("%Y%m%d%H%M%S") + ".mir"
         self.info_entry = (
-            "[" + time.strftime("%Y-%m-%D%%20%H%%3A%M%%3A%S") + "]\n"
+            "[" + time.strftime("%Y-%m-%d%%20%H%%3A%M%%3A%S") + "]\n"
             + "name=" + name + "\n"
             + "replayTime=0\n"
             + "replayCycles=1\n"
@@ -53,10 +53,10 @@ class Macro:
 
         Args:
             unit_num (int): number of the unit to be pressed
-            delay (int): delay in milliseconds
+            delay (int): delay in frames
         """
         unit_coords = UNITS[unit_num - 1]
-        self.text += str(self.current_time + (delay * 1000))
+        self.text += str(self.current_time + (delay * 16666))
         self.current_time += delay * 16666
         self.text += "--VINPUT--MULTI:1:0:" \
                    + str(unit_coords[0]) + ":" + str(unit_coords[1]) + "\n"
@@ -70,16 +70,19 @@ class Macro:
         """
         file = open(self.file_name, "w")
         file.write(self.text
-                   + str(self.current_time + 1000) + "--VINPUT--MOUSE:0:0")
-        file.close
+                   + str(self.current_time + 200000) + "--VINPUT--MOUSE:0:0")
+        file.close()
+        file = open("info.ini", "a")
+        file.write("\n\n" + self.info_entry)
+        file.close()
 
     def print_everything(self):
         """
         Print everything relevant about this object.
         """
-        print(self.name + ":\n")
+        print(self.file_name + " (" + self.name + "):")
         print(self.text
-              + str(self.current_time + 1000) + "--VINPUT--MOUSE:0:0")
+              + str(self.current_time + 200000) + "--VINPUT--MOUSE:0:0")
         print("\nPaste to the info.ini file:")
         print(self.info_entry)
 
@@ -87,20 +90,22 @@ def main():
     """
     Lead the user through making the macro.
     """
-    # TODO: name
-    macro = Macro("test")
+    name = input("Name for macro: ")
+    macro = Macro(name)
     repeats = 0
     while True:
+        delay = "0"
+        if repeats != 0:
+            delay = input("Frame delay between units: ")
+        if delay == "":
+            break;
         # TODO: input checking (between 1 and 6 and not already used)
         unit_num = input("Unit number: ")
         if unit_num == "":
             break;
-        delay = 0
-        if repeats != 0:
-            delay = input("Delay in frames: ")
         macro.add_unit(int(unit_num), int(delay))
         repeats += 1
-    macro.print_everything()
+    macro.write_macro()
 
 
 if __name__ == "__main__":
